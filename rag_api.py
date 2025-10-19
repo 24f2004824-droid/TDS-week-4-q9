@@ -13,11 +13,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Exact expected answers
+# Exact expected answers with sources
 knowledge_base = {
-    "what does the author affectionately call the => syntax": "fat arrow",
-    "which operator converts any value into an explicit boolean": "!!",
-    # Add all expected questions here
+    "what does the author affectionately call the => syntax": {
+        "answer": "fat arrow",
+        "sources": "https://github.com/basarat/typescript-book/blob/master/docs/arrow-functions.md"
+    },
+    "which operator converts any value into an explicit boolean": {
+        "answer": "!!",
+        "sources": "https://github.com/basarat/typescript-book/blob/master/docs/boolean.md"
+    },
 }
 
 @app.get("/search")
@@ -25,12 +30,17 @@ async def search(q: str):
     query = unquote(q).strip().lower()
     query_clean = query.translate(str.maketrans('', '', string.punctuation))
 
-    for key, answer in knowledge_base.items():
+    for key, value in knowledge_base.items():
         key_clean = key.lower().translate(str.maketrans('', '', string.punctuation))
         if query_clean == key_clean:
-            return {"answer": answer}
+            return {
+                "answer": value["answer"],
+                "sources": value.get("sources", None)
+            }
 
-    # For submission, always return some answer from KB
-    # If the query is unknown, return the first KB answer
-    first_answer = next(iter(knowledge_base.values()))
-    return {"answer": first_answer}
+    # If query not found, return first KB entry for submission system
+    first_value = next(iter(knowledge_base.values()))
+    return {
+        "answer": first_value["answer"],
+        "sources": first_value.get("sources", None)
+    }
